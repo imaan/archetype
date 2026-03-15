@@ -8,8 +8,13 @@ set -euo pipefail
 #   ./scripts/framer-deploy.sh <framer-url> <output-dir> [--cname <domain>]
 #
 # Examples:
-#   ./scripts/framer-deploy.sh https://thankful-apartment-080430.framer.app/ ./site
-#   ./scripts/framer-deploy.sh https://my-site.framer.app/ ./site --cname archetype.dev
+#   ./scripts/framer-deploy.sh https://thankful-apartment-080430.framer.app/ ./docs
+#   ./scripts/framer-deploy.sh https://my-site.framer.app/ ./docs --cname archetype.dev
+#
+# What it strips (minimal, only Framer branding):
+#   - The __framer-badge-container div (the "Made with Framer" badge)
+#   - The editor bar script loader
+# Everything else (scripts, fonts, styles, meta tags) is kept intact.
 
 FRAMER_URL="${1:-}"
 OUTPUT_DIR="${2:-}"
@@ -35,10 +40,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-# Use a temp file for the raw HTML (avoids shell variable mangling of large HTML)
 TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
@@ -50,7 +53,7 @@ if [[ ! -s "$TMPFILE" ]]; then
   exit 1
 fi
 
-echo "Stripping Framer branding..."
+echo "Cleaning Framer branding..."
 
 python3 - "$TMPFILE" "$OUTPUT_DIR/index.html" "$FRAMER_URL" "$CNAME" << 'PYEOF'
 import sys
@@ -66,29 +69,50 @@ with open(input_file, "r") as f:
 
 original_size = len(html)
 
-# 1. Remove the Framer editor script loader in <head>
+# 1. Remove the editor bar script loader in <head>
+#    This is a <script> that checks localStorage for __framer_force_showing_editorbar_since
+#    and injects a modulepreload link to framer.com/edit/init.mjs
 html = re.sub(
-    r'<script>try\{if\(localStorage\.get\("__framer_force_showing_editorbar_since"\)\).*?</script>',
+    r'<script>try\{if\(localStorage\.get\("__framer_force_showing_editorbar_since"\)\).*?</script>\n?',
     '',
     html,
     flags=re.DOTALL
 )
 
-# 2. Remove Framer search index meta tags
-html = re.sub(r'\s*<meta name="framer-search-index"[^>]*>', '', html)
-html = re.sub(r'\s*<meta name="framer-search-index-fallback"[^>]*>', '', html)
+# 2. Remove the __framer-badge-container div by finding balanced div tags
+#    Can't use a simple regex because the badge has nested divs, and scripts/links
+#    come AFTER it in the body that we must keep.
+marker = '<div id="__framer-badge-container">'
+badge_start = html.find(marker)
+if badge_start != -1:
+    # Walk forward counting div depth to find the matching </div>
+    i = badge_start
+    depth = 0
+    while i < len(html):
+        if html[i:].startswith('<div'):
+            depth += 1
+            i = html.find('>', i) + 1
+        elif html[i:].startswith('</div>'):
+            depth -= 1
+            i += 6  # len('</div>')
+            if depth == 0:
+                break
+        else:
+            i += 1
+    # Also consume any HTML comments immediately after (<!--/$--> etc.)
+    while i < len(html) and html[i:].startswith('<!--'):
+        end_comment = html.find('-->', i)
+        if end_comment == -1:
+            break
+        i = end_comment + 3
+    badge_end = i
+    # Remove the badge and any leading whitespace
+    ws_start = badge_start
+    while ws_start > 0 and html[ws_start - 1] in ' \t\n':
+        ws_start -= 1
+    html = html[:ws_start] + html[badge_end:]
 
-# 3. Remove the entire __framer-badge-container div and everything inside it
-#    The badge is at the end of <body> - we match from opening div to the </body> tag
-#    and keep only the </body> tag
-html = re.sub(
-    r'<div id="__framer-badge-container">.*?(?=</body>)',
-    '',
-    html,
-    flags=re.DOTALL
-)
-
-# 4. Remove the CSS for the badge container
+# 3. Remove CSS rules targeting the badge container
 html = re.sub(
     r'@supports\s*\(z-index:\s*calc\(infinity\)\)\s*\{#__framer-badge-container\{[^}]*\}\}',
     '',
@@ -100,25 +124,10 @@ html = re.sub(
     html
 )
 
-# 5. Remove badge-related CSS class definitions
-html = re.sub(r'\.__framer-badge[^{]*\{[^}]*\}', '', html)
-# Remove the badge component CSS (framer-6jWyo namespace)
-html = re.sub(r'\.framer-6jWyo[^{]*\{[^}]*\}', '', html)
-
-# 6. Remove the "Made in Framer" HTML comments
-html = re.sub(r'<!--\s*Made in Framer.*?-->\n?', '', html)
-html = re.sub(r'<!--\s*Published.*?-->\n?', '', html)
-
-# 7. Remove Framer generator meta tag
-html = re.sub(r'\s*<meta name="generator" content="Framer[^"]*">', '', html)
-
-# 8. Replace Framer URLs with custom domain if provided
+# 4. Replace Framer URL with custom domain if provided
 if cname:
     custom_url = f"https://{cname}"
     html = html.replace(framer_url, custom_url)
-
-# Clean up excessive blank lines
-html = re.sub(r'\n{3,}', '\n\n', html)
 
 with open(output_file, "w") as f:
     f.write(html)
@@ -131,51 +140,24 @@ PYEOF
 
 echo "Created $OUTPUT_DIR/index.html"
 
-# Create CNAME if custom domain provided
 if [[ -n "$CNAME" ]]; then
   echo "$CNAME" > "$OUTPUT_DIR/CNAME"
   echo "Created $OUTPUT_DIR/CNAME (${CNAME})"
 fi
 
-# Create .nojekyll so GitHub Pages serves files as-is
 touch "$OUTPUT_DIR/.nojekyll"
 echo "Created $OUTPUT_DIR/.nojekyll"
 
-# Verification
+# Verify
 echo ""
-WARNINGS=0
-
 if grep -q '__framer-badge-container' "$OUTPUT_DIR/index.html"; then
-  echo "WARNING: Framer badge container still present"
-  WARNINGS=$((WARNINGS + 1))
+  echo "WARNING: Framer badge still present"
 else
   echo "OK: Framer badge removed"
 fi
 
 if grep -q 'framer.com/edit' "$OUTPUT_DIR/index.html"; then
-  echo "WARNING: Framer editor references still present"
-  WARNINGS=$((WARNINGS + 1))
+  echo "WARNING: Framer editor script still present"
 else
-  echo "OK: Framer editor scripts removed"
-fi
-
-if grep -q 'framer-search-index' "$OUTPUT_DIR/index.html"; then
-  echo "WARNING: Framer search index meta tags still present"
-  WARNINGS=$((WARNINGS + 1))
-else
-  echo "OK: Framer search index removed"
-fi
-
-if grep -q 'name="generator"' "$OUTPUT_DIR/index.html"; then
-  echo "WARNING: Framer generator meta tag still present"
-  WARNINGS=$((WARNINGS + 1))
-else
-  echo "OK: Framer generator tag removed"
-fi
-
-echo ""
-if [[ $WARNINGS -eq 0 ]]; then
-  echo "All clean. Ready for GitHub Pages."
-else
-  echo "$WARNINGS warning(s). Manual cleanup may be needed."
+  echo "OK: Framer editor script removed"
 fi
