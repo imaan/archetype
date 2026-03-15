@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <text x="100" y="280" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-style="italic" fill="#fcfcfa">Archetype</text>
+  <text x="100" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="32" fill="#999">Production-quality apps you can fork, own, and ship.</text>
+  <line x1="100" y1="420" x2="340" y2="420" stroke="#333" stroke-width="1"/>
+  <text x="100" y="470" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#666">Like shadcn/ui, but for entire applications.</text>
+</svg>
