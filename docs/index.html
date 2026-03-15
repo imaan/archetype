@@ -267,6 +267,26 @@
       background-color: #0a0a0a;
     }
 
+    /* Animated mesh gradient (replaces Framer canvas) */
+    .bg-mesh {
+      position: absolute;
+      inset: 0;
+      opacity: 0.5;
+      background:
+        radial-gradient(ellipse at 25% 60%, rgba(120, 80, 200, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 50%, rgba(60, 100, 180, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(80, 40, 150, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 40%, rgba(40, 80, 160, 0.25) 0%, transparent 50%);
+      animation: mesh-drift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes mesh-drift {
+      0%   { transform: scale(1)   translate(0, 0); }
+      33%  { transform: scale(1.1) translate(-20px, 10px); }
+      66%  { transform: scale(0.95) translate(15px, -10px); }
+      100% { transform: scale(1.05) translate(-10px, 15px); }
+    }
+
     /* Glow / Arc container */
     .bg-glow {
       position: absolute;
@@ -476,6 +496,7 @@
 
     <!-- Background Decorative Layer -->
     <div class="bg-layer">
+      <div class="bg-mesh"></div>
       <div class="bg-glow" id="bg-glow">
         <div class="bg-arc-outer"></div>
         <div class="bg-arc-inner"></div>
@@ -539,7 +560,7 @@
       <!-- Form -->
       <div class="form-wrap" id="form-wrap">
         <form class="form-container">
-          <input type="email" name="email" placeholder="Enter your email" required>
+          <input type="email" name="email" placeholder="Your Email Address" required>
           <div class="btn-wrap">
             <input type="submit" value="Get Notified">
           </div>
