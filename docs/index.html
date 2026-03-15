@@ -213,7 +213,51 @@
 <svg display="block" role="presentation" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M 12.995 3 L 3.622 12.373 C 2.794 13.202 1.45 13.202 0.622 12.373 C -0.207 11.545 -0.207 10.202 0.621 9.373 L 9.995 0" fill="transparent" height="12.994673926593148px" id="ANztrIGwO" stroke-dasharray="" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--js9iwy, 2)" stroke="var(--1m973uw, rgb(0,0,0))" transform="translate(2.005 9)" width="12.995173926593148px"/><path d="M 0 4 L 4 0" fill="transparent" height="4px" id="b8GO3KDcT" stroke-dasharray="" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--js9iwy, 2)" stroke="var(--1m973uw, rgb(0,0,0))" transform="translate(18 11)" width="4px"/><path d="M 12.5 8.5 L 10.586 6.586 C 10.211 6.211 10 5.702 10 5.172 L 10 4.828 C 10 4.298 9.789 3.789 9.414 3.414 L 7.757 1.757 C 6.632 0.632 5.107 0 3.516 0 L 0 0 L 1.243 1.243 C 2.368 2.368 3 3.894 3 5.485 L 3 7 L 5 9 L 6.172 9 C 6.702 9 7.211 9.211 7.586 9.586 L 9.5 11.5" fill="transparent" height="11.5px" id="fVqh0Y27a" stroke-dasharray="" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--js9iwy, 2)" stroke="var(--1m973uw, rgb(0,0,0))" transform="translate(9 3)" width="12.5px"/></svg>
 </div>
 	<!-- Start of bodyEnd -->
-    
+    <script>
+    (function() {
+      var SUPABASE_URL = 'https://leehktcyflkdoxnovjjl.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlZWhrdGN5ZmxrZG94bm92ampsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NzgxNTksImV4cCI6MjA4OTE1NDE1OX0.DDZF2OMn5d1NLUV0SSuRpKzQ3Kz6RsKbTP8GkuZKsHw';
+
+      document.querySelectorAll('form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var input = form.querySelector('input[type="email"]');
+          var btn = form.querySelector('input[type="submit"]');
+          if (!input || !btn) return;
+
+          var email = input.value.trim();
+          if (!email) return;
+
+          var originalText = btn.value;
+          btn.value = 'Joining...';
+          btn.disabled = true;
+
+          fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ email: email })
+          }).then(function(res) {
+            if (res.ok) {
+              btn.value = 'You\'re In!';
+              input.value = '';
+            } else if (res.status === 409) {
+              btn.value = 'Already Joined!';
+            } else {
+              btn.value = 'Try Again';
+              btn.disabled = false;
+            }
+          }).catch(function() {
+            btn.value = 'Try Again';
+            btn.disabled = false;
+          });
+        });
+      });
+    })();
+    </script>
     <!-- End of bodyEnd -->
 </body>
 </html>
