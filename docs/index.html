@@ -641,11 +641,12 @@
         var hero = canvas.parentElement;
         canvas.width = hero.clientWidth;
         canvas.height = hero.clientHeight;
+        var maxY = canvas.height * 0.45; /* stars only in upper portion, above crescent */
         stars = [];
         for (var i = 0; i < count; i++) {
           stars.push({
             x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
+            y: Math.random() * maxY,
             r: Math.random() * 1.2 + 0.3,
             phase: Math.random() * Math.PI * 2,
             speed: Math.random() * 0.003 + 0.001
