@@ -273,10 +273,10 @@
       inset: 0;
       opacity: 0.5;
       background:
-        radial-gradient(ellipse at 25% 60%, rgba(80, 120, 160, 0.35) 0%, transparent 50%),
-        radial-gradient(ellipse at 75% 50%, rgba(60, 140, 170, 0.3) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 85%, rgba(100, 180, 200, 0.25) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 40%, rgba(40, 80, 130, 0.2) 0%, transparent 50%);
+        radial-gradient(ellipse at 25% 60%, rgba(100, 80, 160, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 50%, rgba(80, 60, 140, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 85%, rgba(120, 100, 180, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 40%, rgba(60, 40, 120, 0.15) 0%, transparent 50%);
       animation: mesh-drift 20s ease-in-out infinite alternate;
     }
 
@@ -319,7 +319,7 @@
       right: -443px;
       height: 955px;
       border-radius: 100%;
-      background: linear-gradient(rgba(255,255,255,0.45) 0%, #0a0a0a00 100%);
+      background: linear-gradient(rgba(255,255,255,0.25) 0%, #0a0a0a00 100%);
     }
 
     /* Bottom arc (inner ellipse) */
@@ -332,18 +332,18 @@
       border-radius: 100%;
       aspect-ratio: 2.34682;
       background-color: #0a0a0a;
-      box-shadow: inset 0 1px 12px rgba(255,255,255,0.6), 0 -8px 40px 1px rgba(255,255,255,0.25);
+      box-shadow: inset 0 1px 6px rgba(255,255,255,0.5), 0 -4px 18px 0px rgba(255,255,255,0.2);
     }
 
     /* Radial glow spot */
     .bg-radial {
       position: absolute;
-      bottom: 235px;
-      left: calc(47.9167% - 300px);
-      width: 600px;
-      height: 111px;
-      filter: blur(57px);
-      background: radial-gradient(50% 50%, rgba(255,255,255,0.35) 0%, #0a0a0a00 100%);
+      bottom: 250px;
+      left: calc(50% - 200px);
+      width: 400px;
+      height: 80px;
+      filter: blur(40px);
+      background: radial-gradient(50% 50%, rgba(255,255,255,0.25) 0%, #0a0a0a00 100%);
       overflow: hidden;
     }
 
@@ -355,7 +355,7 @@
       width: 1000px;
       height: 300px;
       filter: blur(80px);
-      background: radial-gradient(ellipse at 50% 100%, rgba(140, 200, 220, 0.08) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 100%, rgba(160, 130, 200, 0.12) 0%, transparent 70%);
     }
 
     /* Backdrop blur layer */
@@ -663,29 +663,36 @@
         var hero = canvas.parentElement;
         canvas.width = hero.clientWidth;
         canvas.height = hero.clientHeight;
-        var maxY = canvas.height * 0.45; /* stars only in upper portion, above crescent */
+        var maxY = canvas.height * 0.45;
         stars = [];
         for (var i = 0; i < count; i++) {
           stars.push({
             x: Math.random() * canvas.width,
             y: Math.random() * maxY,
             r: Math.random() * 1.2 + 0.3,
-            phase: Math.random() * Math.PI * 2,
-            speed: Math.random() * 0.003 + 0.001
+            alpha: Math.random() * 0.4 + 0.2,
+            vx: (Math.random() - 0.5) * 0.15,
+            vy: (Math.random() - 0.5) * 0.1
           });
         }
       }
       initStars();
       window.addEventListener('resize', initStars);
 
-      function draw(t) {
+      var maxY = canvas.height * 0.45;
+      function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (var i = 0; i < stars.length; i++) {
           var s = stars[i];
-          var alpha = 0.3 + 0.5 * Math.sin(s.phase + t * s.speed);
+          s.x += s.vx;
+          s.y += s.vy;
+          if (s.x < 0) s.x = canvas.width;
+          if (s.x > canvas.width) s.x = 0;
+          if (s.y < 0) s.y = maxY;
+          if (s.y > maxY) s.y = 0;
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')';
+          ctx.fillStyle = 'rgba(255,255,255,' + s.alpha + ')';
           ctx.fill();
         }
         requestAnimationFrame(draw);
