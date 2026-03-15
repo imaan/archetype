@@ -273,10 +273,10 @@
       inset: 0;
       opacity: 0.5;
       background:
-        radial-gradient(ellipse at 25% 60%, rgba(120, 80, 200, 0.4) 0%, transparent 50%),
-        radial-gradient(ellipse at 75% 50%, rgba(60, 100, 180, 0.35) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 80%, rgba(80, 40, 150, 0.3) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 40%, rgba(40, 80, 160, 0.25) 0%, transparent 50%);
+        radial-gradient(ellipse at 25% 60%, rgba(80, 120, 160, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 50%, rgba(60, 140, 170, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 85%, rgba(100, 180, 200, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 40%, rgba(40, 80, 130, 0.2) 0%, transparent 50%);
       animation: mesh-drift 20s ease-in-out infinite alternate;
     }
 
@@ -287,10 +287,17 @@
       100% { transform: scale(1.05) translate(-10px, 15px); }
     }
 
-    /* Glow / Arc container */
+    /* Glow / edge fades container */
     .bg-glow {
       position: absolute;
       inset: 0;
+    }
+
+    /* Arc layer — above backdrop blur */
+    .bg-arc-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
     }
 
     /* Star particles canvas */
@@ -325,19 +332,30 @@
       border-radius: 100%;
       aspect-ratio: 2.34682;
       background-color: #0a0a0a;
-      box-shadow: inset 0 2px 20px #fff, 0 -10px 50px 1px #ffffff7d;
+      box-shadow: inset 0 2px 30px #fff, 0 -15px 80px 2px #ffffffa0;
     }
 
     /* Radial glow spot */
     .bg-radial {
       position: absolute;
-      bottom: 265px;
+      bottom: 235px;
       left: calc(47.9167% - 393.5px);
       width: 787px;
-      height: 111px;
-      filter: blur(57px);
-      background: radial-gradient(50% 50%, #ffffff80 0%, #0a0a0a00 100%);
+      height: 160px;
+      filter: blur(70px);
+      background: radial-gradient(50% 50%, #ffffffa0 0%, #0a0a0a00 100%);
       overflow: hidden;
+    }
+
+    /* Atmospheric glow above crescent */
+    .bg-atmosphere {
+      position: absolute;
+      bottom: 100px;
+      left: calc(50% - 500px);
+      width: 1000px;
+      height: 300px;
+      filter: blur(80px);
+      background: radial-gradient(ellipse at 50% 100%, rgba(140, 200, 220, 0.15) 0%, transparent 70%);
     }
 
     /* Backdrop blur layer */
@@ -509,15 +527,19 @@
     <div class="bg-layer">
       <canvas class="bg-stars" id="bg-stars"></canvas>
       <div class="bg-mesh"></div>
-      <div class="bg-glow" id="bg-glow">
-        <div class="bg-arc-outer"></div>
-        <div class="bg-arc-inner"></div>
-        <div class="bg-radial"></div>
+      <div class="bg-glow">
         <div class="bg-edge-left"></div>
         <div class="bg-edge-right"></div>
       </div>
       <div class="bg-backdrop" id="bg-backdrop"></div>
       <div class="bg-top-fade" id="bg-top-fade"></div>
+      <!-- Arc + glow ABOVE the backdrop blur -->
+      <div class="bg-arc-layer">
+        <div class="bg-atmosphere"></div>
+        <div class="bg-arc-outer"></div>
+        <div class="bg-arc-inner"></div>
+        <div class="bg-radial"></div>
+      </div>
     </div>
 
     <!-- Content -->
