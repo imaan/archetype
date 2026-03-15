@@ -226,7 +226,10 @@
           if (!input || !btn) return;
 
           var email = input.value.trim();
-          if (!email) return;
+          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            input.focus();
+            return;
+          }
 
           var originalText = btn.value;
           btn.value = 'Joining...';
