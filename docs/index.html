@@ -226,8 +226,8 @@
           if (!input || !btn) return;
 
           var email = input.value.trim();
-          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            input.focus();
+          if (!email || !input.checkValidity()) {
+            input.reportValidity();
             return;
           }
 
