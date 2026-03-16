@@ -217,22 +217,11 @@
 	var SUPABASE_URL = 'https://leehktcyflkdoxnovjjl.supabase.co';
 	var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlZWhrdGN5ZmxrZG94bm92ampsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NzgxNTksImV4cCI6MjA4OTE1NDE1OX0.DDZF2OMn5d1NLUV0SSuRpKzQ3Kz6RsKbTP8GkuZKsHw';
 	document.querySelectorAll('form').forEach(function(form) {
-		form.addEventListener('submit', function(e) {
-			e.preventDefault();
-			e.stopImmediatePropagation();
+		form.addEventListener('submit', function() {
 			var input = form.querySelector('input[type="email"]');
-			var btn = form.querySelector('input[type="submit"]');
-			if (!input || !btn) return;
+			if (!input) return;
 			var email = input.value.trim();
-			input.setAttribute('pattern', '[^\\s@]+@[^\\s@]+\\.[^\\s@]+');
-			input.setAttribute('title', 'Please enter a valid email (e.g. name@example.com)');
-			if (!email || !input.checkValidity()) {
-				input.reportValidity();
-				return;
-			}
-			var originalText = btn.value;
-			btn.value = 'Joining...';
-			btn.disabled = true;
+			if (!email) return;
 			fetch(SUPABASE_URL + '/rest/v1/waitlist', {
 				method: 'POST',
 				headers: {
@@ -241,19 +230,6 @@
 					'Prefer': 'return=minimal'
 				},
 				body: JSON.stringify({ email: email })
-			}).then(function(res) {
-				if (res.ok) {
-					btn.value = 'You\'re In!';
-					input.value = '';
-				} else if (res.status === 409) {
-					btn.value = 'Already Joined!';
-				} else {
-					btn.value = 'Try Again';
-					btn.disabled = false;
-				}
-			}).catch(function() {
-				btn.value = 'Try Again';
-				btn.disabled = false;
 			});
 		});
 	});
