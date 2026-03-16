@@ -1,7 +1,7 @@
 # Design: /dev-init Generator Skill
 
 **Date:** 2026-03-16
-**Status:** Draft
+**Status:** Reviewed
 
 ## Problem
 
@@ -65,13 +65,9 @@ Check if `.claude/skills/dev/SKILL.md`, `.claude/skills/quick-fix/SKILL.md`, or 
 
 #### Phase 2: CLAUDE.md gate
 
-Check if `CLAUDE.md` exists in the project root. If not:
-- Analyze the codebase (language, framework, structure, commands)
-- Generate a CLAUDE.md following the standard format (project overview, commands, architecture, conventions)
-- Show the user what was generated
-- Continue to Phase 3
+Check if `CLAUDE.md` exists in the project root. If not, delegate to Claude Code's built-in `/init` command, which analyzes the codebase and generates a CLAUDE.md. This is a well-defined existing capability — `/dev-init` does not reimplement it.
 
-If CLAUDE.md exists, proceed directly.
+After `/init` completes (or if CLAUDE.md already exists), proceed to Phase 3.
 
 #### Phase 3: Project analysis
 
@@ -223,60 +219,52 @@ Follows the claude-md-improver pattern:
 3. Remove debt reference from /quick-fix (show diff)
 ```
 
-## Generated skill templates
+## Reference templates
 
-### /dev template structure
+The existing project-level skills in this repository serve as the canonical reference templates for what `/dev-init` should generate:
 
-1. Mode selection (interactive vs auto)
-2. Roles
-3. GitHub Issue (discuss or auto-pick)
-4. Create PRD (if PRD location exists)
-5. PRD Review (interactive gate)
-6. Pre-implementation summary
-7. Create branch (with worktree detection, project-specific paths)
-8. Implement (with project-specific notes, scope creep handling)
-9. Push PR
-10. Run existing tests (exact command)
-11. Write new tests (framework-specific guidelines)
-12. Manual testing (exact dev server command, health check)
-13. Merge PR (never auto-merge in auto mode)
-14. Sanity check
-15. Update PRD (if PRDs exist)
-16. Create follow-up issues
-17. Move PRD to done (if pattern exists)
-18. Document debt (if scratchpad exists)
-19. Update work queue (if work queue exists)
-20. Improve master document
-21. Key rules
+- `.claude/skills/dev/SKILL.md` — Reference for the `/dev` output
+- `.claude/skills/quick-fix/SKILL.md` — Reference for the `/quick-fix` output
+- `.claude/skills/cleanup/SKILL.md` — Reference for the `/cleanup` output
 
-### /quick-fix template structure
+These were hand-crafted for the archetype project and represent the "gold standard" output. The generator should produce skills with the same structure, workflow steps, and universal rules — but with project-specific commands, paths, and conditional steps adapted to the target project.
 
-1. Mode selection
-2. When to use / when not to use
-3. Confirm scope
-4. Create branch (with worktree detection)
-5. Implement (project-specific notes)
-6. Run tests (exact command)
-7. Create PR
-8. Verify & merge (never auto-merge in auto mode)
-9. Update work queue & document debt (if applicable)
-10. Key rules
+**The generator does not use placeholder templates.** It reads the project context (Phase 3) and generates the skill content directly, following the structure and conventions of the reference templates. This gives Claude full flexibility to adapt the output to each project's specific needs rather than filling in rigid `{{placeholder}}` tokens.
 
-### /cleanup template structure
+### Generated skill structures
 
-1. Mode selection
-2. When to use
-3. Git status & worktrees (project-specific paths)
-4. Stray files (project-specific locations)
-5. Open PRs
-6. Open issues
-7. Background processes (project-specific process names and ports)
-8. Database/backend state (project-specific: Supabase, SQLite, Postgres, etc.)
-9. Environment verification (exact dependency command)
-10. Document debt (if applicable)
-11. Update work queue (if applicable)
-12. Final verification (exact test and server commands)
-13. Post-cleanup state checklist
+**`/dev` skill — 18 workflow steps:**
+1. GitHub Issue → 2. Create PRD (conditional) → 3. PRD Review (interactive gate) → 4. Pre-implementation summary → 5. Create branch → 6. Implement → 7. Push PR → 8. Run existing tests → 9. Write new tests → 10. Manual testing → 11. Merge PR → 12. Sanity check → 13. Update PRD (conditional) → 14. Create follow-up issues → 15. Move PRD to done (conditional) → 16. Document debt (conditional) → 17. Update work queue (conditional) → 18. Suggest process improvements
+
+Plus: Mode selection preamble, Roles preamble, Key rules footer.
+
+**`/quick-fix` skill — 7 workflow steps:**
+1. Confirm scope → 2. Create branch → 3. Implement → 4. Run tests → 5. Create PR → 6. Verify & merge → 7. Update work queue & document debt (conditional)
+
+Plus: Mode selection, when to use / when not to use, Key rules.
+
+**`/cleanup` skill — 10 checklist items:**
+1. Git status & worktrees → 2. Stray files → 3. Open PRs → 4. Open issues → 5. Background processes → 6. Database/backend state (conditional) → 7. Environment verification → 8. Document debt (conditional) → 9. Update work queue (conditional) → 10. Final verification
+
+Plus: Mode selection, Post-cleanup state checklist.
+
+### Conditional steps across all skills
+
+Steps marked (conditional) are only included when the relevant infrastructure is detected:
+
+| Step | Condition | Applies to |
+|------|-----------|------------|
+| Create/Update PRD | PRD directory detected | /dev |
+| Move PRD to done | `scratchpad/done/` pattern exists | /dev |
+| Update work queue | `scratchpad/` exists | /dev, /quick-fix, /cleanup |
+| Document debt | `scratchpad/` exists | /dev, /quick-fix, /cleanup |
+| Docker build | Dockerfile detected | /dev, /cleanup |
+| Database commands | Database tooling detected (Supabase, SQLite, Prisma, etc.) | /dev, /cleanup |
+| Lint step | Linter config detected | /dev |
+
+### "Suggest process improvements" step
+
+The final step of `/dev` asks Claude to suggest improvements to the skill itself based on issues encountered during the session. This is advisory — it outputs suggestions to the user, it does not self-modify the skill file. The user can apply suggestions manually or run `/dev-init:improve` to do it systematically.
 
 ## Auto mode behavior (universal across all generated skills)
 
@@ -295,12 +283,30 @@ Follows the claude-md-improver pattern:
 
 **Hard rule: never auto-merge.** Auto mode creates the PR and stops. The user reviews and merges.
 
+## Assumptions
+
+- **GitHub-based workflow.** The generated skills assume GitHub for PRs and issues (`gh` CLI). Projects using other platforms (Linear, GitLab, Jira) would need manual adjustment after generation.
+- **Single-service projects by default.** Monorepos require user input (see edge cases).
+- **CLAUDE.md as source of truth.** When CLAUDE.md and filesystem detection disagree (e.g., CLAUDE.md says `npm test` but no test script in package.json), CLAUDE.md wins — the user wrote it intentionally. Filesystem detection fills gaps that CLAUDE.md doesn't cover.
+
+## Provenance header
+
+Every generated skill file includes a comment header:
+
+```markdown
+<!-- Generated by /dev-init on YYYY-MM-DD. Safe to customize — /dev-init:improve will propose updates, not overwrite. -->
+```
+
+This helps `/dev-init:improve` distinguish generated content from hand-written skills and avoids overwriting projects that were never generated by `/dev-init`.
+
 ## Edge cases
 
 | Scenario | Behavior |
 |----------|----------|
-| No CLAUDE.md, no detectable tech stack | Generate minimal CLAUDE.md with just project name and directory structure. Generate skills with placeholder commands marked `# TODO: fill in` |
-| Monorepo with multiple services | Detect top-level packages. Ask user which service to generate skills for. Generate skills scoped to that service's commands. |
+| No CLAUDE.md, no detectable tech stack | Run `/init` which will generate a minimal CLAUDE.md. Generate skills with placeholder commands marked `# TODO: fill in your test command` |
+| Monorepo with multiple services | Detect top-level packages/services. Ask user which one to scope skills for. Skills are generated once, scoped to that service. Re-run for additional services is not supported — monorepo users should customize the generated skills manually. |
 | Project uses `make` | Detect Makefile targets and use them (e.g., `make test`, `make dev`) |
 | No tests exist yet | Include test step but note "no test suite detected — skip until tests are added" |
 | No git remote | Skip PR-related steps, just commit locally |
+| Multiple package manifests at root | Prioritize: CLAUDE.md commands > Makefile targets > primary manifest. For conflicting manifests (e.g., both `package.json` and `pyproject.toml`), ask the user which is the primary runtime. |
+| Unrecognized framework/language | Generate skills with generic structure. Commands section uses `# TODO` placeholders. Workflow steps are still included — just without baked-in commands. |
