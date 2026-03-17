@@ -1,7 +1,7 @@
 # PRD: Input Engine — YouTube Extraction
 
 **Date:** 2026-03-16
-**Status:** Draft
+**Status:** Phase 1 Complete (GO — Tier 1 sufficient for v1)
 **Depends on:** 00-base-architecture
 **Extraction libraries:** youtube-transcript-api, yt-dlp
 
@@ -212,6 +212,29 @@ curl -X POST localhost:8000/extract \
 - Proxy/cookie management
 
 ---
+
+## Phase 1 Results
+
+**Libraries:** youtube-transcript-api v1.0.3 + yt-dlp v2025.3.14 | **Pass rate: 5/5 (100%)** | **Decision: GO**
+
+| Category | Transcript | Type | Metadata | Chapters | Time |
+|----------|-----------|------|----------|----------|------|
+| Rick Astley (manual captions) | PASS | manual | PASS | - | 2.5s |
+| Me at the zoo (first YT video) | PASS | manual | PASS | 3 | 1.8s |
+| HEYYEYAAEYAAAEYAEYAA | PASS | auto (nl) | PASS | - | 2.2s |
+| freeCodeCamp Python (4.4hr) | PASS | manual | PASS | 35 | 1.7s |
+| Gangnam Style (Korean) | PASS | auto (ko) | PASS | - | 2.1s |
+
+**Key findings for Phase 2:**
+- **API change:** youtube-transcript-api v1.0.0+ uses instance-based API: `YouTubeTranscriptApi().fetch(video_id)` (not class methods)
+- Transcript priority: manual English → auto English → any available language
+- Include `[M:SS]` timestamps in markdown output for cross-referencing
+- Chapter markers: include in both metadata dict and formatted content section
+- yt-dlp `--dump-json --no-download` is fast and reliable for metadata
+- YouTube blocks cloud IPs for transcript API — works locally, production needs proxy (v2)
+- Tier 2 (audio transcription via faster-whisper) deferred — caption availability was 100%
+
+Full results: `tests/standalone/results/youtube_results.md`
 
 ## What Was Done
 

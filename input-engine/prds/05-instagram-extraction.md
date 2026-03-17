@@ -1,9 +1,9 @@
 # PRD: Input Engine — Instagram Extraction
 
 **Date:** 2026-03-16
-**Status:** Draft
+**Status:** Phase 1 Complete (DEFER TO V2)
 **Depends on:** 00-base-architecture
-**Extraction library:** instaloader
+**Extraction library:** ~~instaloader~~ — all tested libraries fail without authentication
 
 ---
 
@@ -241,6 +241,30 @@ Note: Instagram tests MUST use mocked responses in CI. Real Instagram requests a
 
 ---
 
+## Phase 1 Results
+
+**Libraries tested:** instaloader v4.15, ab-downloader (Node.js), yt-dlp | **Pass rate: 0/10 (0%)** | **Decision: DEFER TO V2**
+
+All three libraries fail — Instagram now requires authenticated browser cookies for ANY content access:
+
+| Library | Result | Error |
+|---------|--------|-------|
+| instaloader (Python) | 0/4 | 403 Forbidden on GraphQL API |
+| ab-downloader (Node.js) | 0/4 | Empty arrays (was working in invisible-inbox, now broken) |
+| yt-dlp | 0/2 | "empty media response" — explicitly requests cookie auth |
+
+**Root cause:** Instagram enforces a hard authentication wall (not rate limiting). This broke after the invisible-inbox implementation was built.
+
+**Options for v2 (if pursued):**
+1. yt-dlp with exported cookies (`--cookies cookies.txt`) — most promising, requires user setup
+2. Playwright/browser automation — heavy dependency
+3. Instagram Graph API — official but limited to business accounts
+4. Defer entirely — focus on the 4 working extractors
+
+**Recommendation:** Defer. The other 4 extractors all work excellently. Instagram adds fragility for uncertain value. If needed later, yt-dlp with exported cookies is the most viable path.
+
+Full results: `tests/standalone/results/instagram_results.md`
+
 ## What Was Done
 
-_(To be filled after implementation)_
+_(Not proceeding to Phase 2 implementation — deferred to v2)_

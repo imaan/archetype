@@ -1,7 +1,7 @@
 # PRD: Input Engine — PDF Extraction
 
 **Date:** 2026-03-16
-**Status:** Draft
+**Status:** Phase 1 Complete (GO)
 **Depends on:** 00-base-architecture
 **Extraction library:** pymupdf4llm
 
@@ -166,6 +166,28 @@ curl -X POST localhost:8000/extract \
 - Page-range selection (extract all pages)
 
 ---
+
+## Phase 1 Results
+
+**Library:** pymupdf4llm (pymupdf v1.27.2) | **Pass rate: 3/3 (100%)** | **Decision: GO**
+
+| Category | Status | Pages | Words | Tables | Metadata | Time |
+|----------|--------|-------|-------|--------|----------|------|
+| Text-heavy document | PASS | 1 | 160 | No | Title, Author | 215ms |
+| Document with tables | PASS | 1 | 47 | Yes | Title, Author | 232ms |
+| Multi-page (15 pages) | PASS | 15 | 2,626 | No | Title, Author | 818ms |
+
+**Key findings for Phase 2:**
+- `pymupdf4llm.to_markdown()` is the right API — returns clean markdown directly
+- Use `doc.metadata` for title, author, dates
+- Tables render as proper Markdown with `|` separators — works perfectly
+- Performance: ~54.5ms/page at scale (100-page PDF ~5.5s, well within 120s timeout)
+- Base64 and URL inputs need pre-processing — download/decode to temp file
+- OCR requires Tesseract — document as optional dependency for scanned PDFs
+- Second table in multi-table PDF was missed — investigate in Phase 2
+- `has_tables` detectable by checking for `|` and `---` in output
+
+Full results: `tests/standalone/results/pdf_results.md`
 
 ## What Was Done
 

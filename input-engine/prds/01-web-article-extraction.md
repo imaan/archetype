@@ -1,7 +1,7 @@
 # PRD: Input Engine — Web Article Extraction
 
 **Date:** 2026-03-16
-**Status:** Draft
+**Status:** Phase 1 Complete (GO)
 **Depends on:** 00-base-architecture
 **Extraction library:** trafilatura
 
@@ -152,6 +152,30 @@ curl -X POST localhost:8000/extract \
 - Readability fallback (trafilatura has this built in)
 
 ---
+
+## Phase 1 Results
+
+**Library:** trafilatura v2.0.0 | **Pass rate: 5/7 (71%)** | **Decision: GO**
+
+| Category | Status | Title | Author | Date | Body | Time |
+|----------|--------|-------|--------|------|------|------|
+| Wikipedia (technical docs) | PASS | Yes | Yes* | Yes | 77,568 chars | 1,820ms |
+| BBC News | PASS | Yes | No | Yes | 1,473 chars | 883ms |
+| Python docs (reference) | PASS | Yes | No | Yes | 16,288 chars | 1,981ms |
+| Paul Graham essay | PASS | Yes | No | Yes | 66,729 chars | 997ms |
+| Craigslist (non-article) | PASS | No | No | No | 707 chars | 1,661ms |
+| example.com (minimal) | FAIL | - | - | - | 0 | 30,202ms |
+| NYT (paywalled) | FAIL | - | - | - | 0 | 296ms |
+
+**Key findings for Phase 2:**
+- Set fetch timeout to 15s (default 30s is too long for synchronous API)
+- Author extraction is unreliable — treat as optional metadata
+- Title extraction is high-confidence — use as primary metadata
+- Normalize dates to ISO 8601 in the handler
+- Content length < 100 chars should get lower confidence scores
+- Paywalled content returns None — document as known limitation
+
+Full results: `tests/standalone/results/web_article_results.md`
 
 ## What Was Done
 
