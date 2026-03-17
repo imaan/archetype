@@ -11,9 +11,11 @@ Archetype is a collection of production-quality, forkable base applications — 
 - **input-engine/** — Content extraction microservice (Python/FastAPI, currently in PRD/architecture phase)
   - `ARCHITECTURE.md` — Comprehensive tech design with all architectural decisions and rationale
   - `prds/` — Numbered PRDs (00-05) covering base architecture and each extraction type
-- **landing-page/** — Framer-exported waitlist site deployed to GitHub Pages
+- **docs/** — GitHub Pages deployment directory (served from `/docs` on `main`)
   - `index.html` — Auto-generated Framer export (~140KB). **Do not manually edit** — use `framer-deploy.sh` to regenerate
-  - `framer-deploy.sh` — Pulls Framer site, strips branding badge, outputs clean HTML
+  - `.nojekyll` — Disables Jekyll processing
+- **landing-page/** — Landing page tooling
+  - `framer-deploy.sh` — Pulls Framer site, strips branding badge, outputs to `./docs`
 - **supabase/** — Backend (waitlist table with RLS, local dev config on port 54321)
 - **scratchpad/** — Market research and initial planning docs (reference only)
 - **assets/** — Favicon and OG image (SVG + PNG)
@@ -22,8 +24,8 @@ Archetype is a collection of production-quality, forkable base applications — 
 
 ### Landing Page
 ```bash
-# Re-export from Framer and strip branding
-./landing-page/framer-deploy.sh <framer-url> ./landing-page [--cname <domain>]
+# Re-export from Framer and strip branding (outputs to ./docs for GitHub Pages)
+./landing-page/framer-deploy.sh <framer-url> ./docs [--cname <domain>]
 ```
 
 ### Supabase

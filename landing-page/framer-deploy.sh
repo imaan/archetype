@@ -8,8 +8,8 @@ set -euo pipefail
 #   ./scripts/framer-deploy.sh <framer-url> <output-dir> [--cname <domain>]
 #
 # Examples:
-#   ./scripts/framer-deploy.sh https://thankful-apartment-080430.framer.app/ ./docs
-#   ./scripts/framer-deploy.sh https://my-site.framer.app/ ./docs --cname archetype.dev
+#   ./landing-page/framer-deploy.sh https://thankful-apartment-080430.framer.app/ ./docs
+#   ./landing-page/framer-deploy.sh https://my-site.framer.app/ ./docs --cname archetype.dev
 #
 # What it strips (minimal, only Framer branding):
 #   - The __framer-badge-container div (the "Made with Framer" badge)
