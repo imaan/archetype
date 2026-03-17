@@ -208,4 +208,22 @@ curl localhost:8000/health
 
 ## What Was Done
 
-_(To be filled after implementation)_
+**Implemented:** 2026-03-16 | **PR:** #12 | **Issue:** #6
+
+All deliverables completed as specified. No deviations from the PRD.
+
+**Files created:**
+- `pyproject.toml` — uv project with FastAPI, uvicorn, pydantic, python-frontmatter
+- `src/input_engine/models.py` — All 5 Pydantic schemas
+- `src/input_engine/detector.py` — URL pattern matching for youtube, instagram, pdf, email, generic URLs
+- `src/input_engine/registry.py` — Handler registry with text fallback
+- `src/input_engine/handlers/base.py` — Abstract BaseHandler
+- `src/input_engine/handlers/text.py` — Text/Markdown passthrough with frontmatter parsing
+- `src/input_engine/main.py` — FastAPI app with `/extract`, `/health`, `/handlers`
+- `Dockerfile` + `docker-compose.yml` — Docker setup
+- `tests/` — 23 tests across 3 files (API integration, detector, text handler)
+- `README.md` — Setup instructions and example curl commands
+
+**Notes:**
+- Unregistered content types (e.g. YouTube URL before YouTube handler exists) fall back to text handler rather than returning 422 — this is intentional so the service is always useful
+- Dockerfile required copying README.md for hatchling build (caught during Docker verification)
