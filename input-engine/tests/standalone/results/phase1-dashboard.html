@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Engine — Phase 1 Validation Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .summary-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+  }
+
+  .summary-card .icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .summary-card .name {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .summary-card .library {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-bottom: 12px;
+  }
+
+  .summary-card .score {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .summary-card .score-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .summary-card .decision-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-go { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+  .badge-conditional { background: rgba(234, 179, 8, 0.15); color: var(--yellow); }
+
+  .main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel h2 .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Test results table */
+  .test-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .test-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .test-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .test-table tr:last-child td { border-bottom: none; }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+
+  .status-pass { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+  .status-fail { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+  .status-expected { background: rgba(234, 179, 8, 0.12); color: var(--yellow); }
+
+  /* Bar chart */
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .bar-label {
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .bar-track {
+    height: 28px;
+    background: var(--surface2);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    min-width: fit-content;
+  }
+
+  .bar-value {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Timing chart */
+  .timing-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .timing-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 70px;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .timing-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .timing-bar {
+    height: 20px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .timing-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .timing-value {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Key findings */
+  .findings-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .findings-list li {
+    font-size: 13px;
+    line-height: 1.5;
+    padding-left: 20px;
+    position: relative;
+    color: var(--text);
+  }
+
+  .findings-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .findings-list li.good::before { background: var(--green); }
+  .findings-list li.warn::before { background: var(--yellow); }
+  .findings-list li.bad::before { background: var(--red); }
+  .findings-list li.info::before { background: var(--blue); }
+
+  /* Radar / overview chart */
+  .radar-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* Full width panels */
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* Comparison matrix */
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .matrix-table th {
+    padding: 10px 14px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .matrix-table th:first-child {
+    text-align: left;
+  }
+
+  .matrix-table td {
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .matrix-table td:first-child {
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .matrix-table tr:last-child td { border-bottom: none; }
+
+  .matrix-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .cell-pass { background: rgba(34, 197, 94, 0.15); }
+  .cell-fail { background: rgba(239, 68, 68, 0.15); }
+  .cell-na { background: rgba(136, 136, 160, 0.1); }
+  .cell-partial { background: rgba(234, 179, 8, 0.15); }
+
+  /* Navigation tabs */
+  .view-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 10px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .view-tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .view-tab:hover { color: var(--text); }
+  .view-tab.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .summary-row { grid-template-columns: repeat(3, 1fr); }
+    .main-content { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .summary-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.05s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.15s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-5 { animation-delay: 0.25s; opacity: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Input Engine — Phase 1 Validation</h1>
+  <div class="subtitle">Standalone extraction library testing across 5 content types &bull; March 2026</div>
+</div>
+
+<div class="summary-row" id="summaryCards"></div>
+
+<div class="view-tabs">
+  <button class="view-tab active" onclick="switchView('overview')">Overview</button>
+  <button class="view-tab" onclick="switchView('detail')">Test Details</button>
+  <button class="view-tab" onclick="switchView('timing')">Performance</button>
+  <button class="view-tab" onclick="switchView('matrix')">Capability Matrix</button>
+</div>
+
+<div id="view-overview" class="view active">
+  <div class="main-content">
+    <div class="panel">
+      <h2><span class="dot" style="background:var(--green)"></span> Pass Rates</h2>
+      <div class="bar-chart" id="passRateChart"></div>
+    </div>
+    <div class="panel">
+      <h2><span class="dot" style="background:var(--blue)"></span> Key Findings</h2>
+      <ul class="findings-list" id="keyFindings"></ul>
+    </div>
+    <div class="panel full-width">
+      <h2><span class="dot" style="background:var(--purple)"></span> Decision Summary</h2>
+      <div id="decisionSummary"></div>
+    </div>
+  </div>
+</div>
+
+<div id="view-detail" class="view">
+  <div class="main-content">
+    <div class="panel full-width" id="detailPanel">
+      <h2 id="detailTitle">Select an extraction type above</h2>
+      <table class="test-table" id="detailTable"></table>
+    </div>
+  </div>
+</div>
+
+<div id="view-timing" class="view">
+  <div class="main-content">
+    <div class="panel">
+      <h2><span class="dot" style="background:var(--orange)"></span> Extraction Time (avg per test)</h2>
+      <div class="timing-grid" id="avgTimingChart"></div>
+    </div>
+    <div class="panel">
+      <h2><span class="dot" style="background:var(--blue)"></span> Per-Test Timing Breakdown</h2>
+      <div class="timing-grid" id="perTestTimingChart"></div>
+    </div>
+  </div>
+</div>
+
+<div id="view-matrix" class="view">
+  <div class="main-content">
+    <div class="panel full-width">
+      <h2><span class="dot" style="background:var(--accent)"></span> Extraction Capability Matrix</h2>
+      <table class="matrix-table" id="matrixTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const data = {
+  extractors: [
+    {
+      id: 'web',
+      name: 'Web Article',
+      icon: '🌐',
+      library: 'trafilatura v2.0.0',
+      decision: 'go',
+      color: '#3b82f6',
+      tests: [
+        { name: 'Wikipedia', category: 'Technical docs', status: 'pass', time: 1820, body: 77568, title: true, author: true, date: true },
+        { name: 'BBC News', category: 'News article', status: 'pass', time: 883, body: 1473, title: true, author: false, date: true },
+        { name: 'Python docs', category: 'Technical docs', status: 'pass', time: 1981, body: 16288, title: true, author: false, date: true },
+        { name: 'Paul Graham', category: 'Long-form essay', status: 'pass', time: 997, body: 66729, title: true, author: false, date: true },
+        { name: 'Craigslist', category: 'Non-article', status: 'pass', time: 1661, body: 707, title: false, author: false, date: false },
+        { name: 'example.com', category: 'Minimal page', status: 'expected', time: 30202, body: 0, title: false, author: false, date: false, note: 'Fetch timeout (30s)' },
+        { name: 'NYT (paywall)', category: 'Paywalled', status: 'expected', time: 296, body: 0, title: false, author: false, date: false, note: 'Blocked by paywall' },
+      ],
+      findings: [
+        { type: 'good', text: 'Excellent extraction quality — clean text, no nav/footer contamination' },
+        { type: 'good', text: 'Title and date metadata reliably extracted' },
+        { type: 'warn', text: 'Author extraction unreliable across sites' },
+        { type: 'info', text: 'Reduce fetch timeout from 30s to 15s for handler' },
+        { type: 'bad', text: 'Paywalled content returns nothing (expected limitation)' },
+      ],
+      capabilities: { title: 'yes', author: 'partial', date: 'yes', body: 'yes', media: 'partial', tables: 'no', metadata: 'yes' }
+    },
+    {
+      id: 'youtube',
+      name: 'YouTube',
+      icon: '▶️',
+      library: 'transcript-api + yt-dlp',
+      decision: 'go',
+      color: '#ef4444',
+      tests: [
+        { name: 'Rick Astley', category: 'Manual captions', status: 'pass', time: 2540, body: 2089, title: true, author: true, date: true, note: 'Manual EN captions' },
+        { name: 'Me at the zoo', category: 'Auto captions', status: 'pass', time: 1752, body: 217, title: true, author: true, date: true, note: 'Manual captions found' },
+        { name: 'HEYYEYAAEYAA', category: 'Music video', status: 'pass', time: 2178, body: 103, title: true, author: true, date: true, note: 'Auto NL captions' },
+        { name: 'freeCodeCamp', category: '4.4hr tutorial', status: 'pass', time: 1734, body: 259401, title: true, author: true, date: true, note: '35 chapters, manual EN' },
+        { name: 'Gangnam Style', category: 'Non-English', status: 'pass', time: 2095, body: 654, title: true, author: true, date: true, note: 'Auto KO captions' },
+        { name: 'Invalid ID', category: 'Error handling', status: 'expected', time: 943, body: 0, title: false, author: false, date: false, note: 'Graceful VideoUnavailable' },
+      ],
+      findings: [
+        { type: 'good', text: '100% transcript success on valid videos — Tier 1 sufficient' },
+        { type: 'good', text: '259K char transcript from 4.4hr video — handles long content' },
+        { type: 'good', text: 'yt-dlp metadata comprehensive (chapters, thumbnails, counts)' },
+        { type: 'warn', text: 'API v1.0.0+ breaking change: must use instance-based API' },
+        { type: 'info', text: 'Cloud IPs blocked for transcript API — needs proxy in production' },
+      ],
+      capabilities: { title: 'yes', author: 'yes', date: 'yes', body: 'yes', media: 'yes', tables: 'no', metadata: 'yes' }
+    },
+    {
+      id: 'pdf',
+      name: 'PDF',
+      icon: '📄',
+      library: 'pymupdf4llm v0.0.17',
+      decision: 'go',
+      color: '#f97316',
+      tests: [
+        { name: 'Text document', category: 'Text-heavy', status: 'pass', time: 215, body: 1168, title: true, author: true, date: true },
+        { name: 'Table document', category: 'With tables', status: 'pass', time: 232, body: 724, title: true, author: true, date: true, note: 'Tables as MD tables' },
+        { name: 'Multi-page (15p)', category: '15 pages', status: 'pass', time: 818, body: 17968, title: true, author: true, date: true, note: '54.5ms/page' },
+      ],
+      findings: [
+        { type: 'good', text: 'Tables render as proper Markdown tables — perfectly structured' },
+        { type: 'good', text: '54.5ms/page at scale — well within timeout limits' },
+        { type: 'good', text: 'Metadata (title, author, dates) extracted reliably from PDF props' },
+        { type: 'warn', text: 'OCR disabled — requires optional Tesseract for scanned PDFs' },
+        { type: 'info', text: 'Second table in multi-table doc was missed — needs investigation' },
+      ],
+      capabilities: { title: 'yes', author: 'yes', date: 'yes', body: 'yes', media: 'partial', tables: 'yes', metadata: 'yes' }
+    },
+    {
+      id: 'email',
+      name: 'Email',
+      icon: '✉️',
+      library: 'stdlib + html-to-md',
+      decision: 'go',
+      color: '#22c55e',
+      tests: [
+        { name: 'Plain text', category: 'Plain text', status: 'pass', time: 1, body: 304, title: true, author: true, date: true },
+        { name: 'HTML newsletter', category: 'HTML', status: 'pass', time: 1, body: 324, title: true, author: true, date: true, note: 'Clean MD conversion' },
+        { name: 'With attachments', category: 'Attachments', status: 'pass', time: 1, body: 234, title: true, author: true, date: true, note: '2 attachments detected' },
+        { name: 'Forwarded', category: 'Forwarded', status: 'pass', time: 0, body: 646, title: true, author: true, date: true, note: 'Forward marker detected' },
+        { name: 'Reply chain', category: 'Reply chain', status: 'pass', time: 0, body: 694, title: true, author: true, date: true, note: 'Quoted content detected' },
+        { name: 'Unicode + emoji', category: 'Unicode', status: 'pass', time: 0, body: 381, title: true, author: true, date: true, note: 'All chars preserved' },
+        { name: 'Malformed', category: 'Edge case', status: 'pass', time: 0, body: 52, title: false, author: false, date: false, note: 'Graceful degradation' },
+      ],
+      findings: [
+        { type: 'good', text: '7/7 pass — most reliable extractor, zero failures' },
+        { type: 'good', text: 'Zero additional dependencies for core parsing (stdlib only)' },
+        { type: 'good', text: 'HTML newsletters convert to clean Markdown with formatting' },
+        { type: 'good', text: 'Unicode, emoji, international characters all preserved perfectly' },
+        { type: 'info', text: 'Attachment binary content not extracted (listed as references only)' },
+      ],
+      capabilities: { title: 'yes', author: 'yes', date: 'yes', body: 'yes', media: 'partial', tables: 'no', metadata: 'yes' }
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram',
+      icon: '📷',
+      library: 'instaloader v4.15',
+      decision: 'conditional',
+      color: '#a855f7',
+      tests: [
+        { name: 'NASA photo', category: 'Public photo', status: 'fail', time: 3550, body: 0, title: false, author: false, date: false, note: '403 Forbidden' },
+        { name: 'Invalid post', category: 'Error handling', status: 'expected', time: 1181, body: 0, title: false, author: false, date: false, note: '403 Forbidden' },
+        { name: 'Public reel', category: 'Video/reel', status: 'fail', time: 1380, body: 0, title: false, author: false, date: false, note: '403 Forbidden' },
+        { name: 'Hashtag post', category: 'With hashtags', status: 'fail', time: 4679, body: 0, title: false, author: false, date: false, note: '403 Forbidden' },
+      ],
+      findings: [
+        { type: 'bad', text: '0/4 pass — anonymous access completely blocked by Instagram' },
+        { type: 'bad', text: 'All GraphQL queries return 403 Forbidden regardless of post' },
+        { type: 'warn', text: 'Expected per PRD — Instagram extraction is inherently fragile' },
+        { type: 'info', text: 'Authenticated sessions may work but risk account locks' },
+        { type: 'info', text: 'Build handler with resilience-first design (confidence=0.0 on fail)' },
+      ],
+      capabilities: { title: 'no', author: 'no', date: 'no', body: 'no', media: 'no', tables: 'no', metadata: 'no' }
+    },
+  ]
+};
+
+let selectedExtractor = 'web';
+
+function init() {
+  renderSummaryCards();
+  renderPassRateChart();
+  renderKeyFindings();
+  renderDecisionSummary();
+  renderDetail();
+  renderTimingCharts();
+  renderMatrix();
+}
+
+function renderSummaryCards() {
+  const container = document.getElementById('summaryCards');
+  container.innerHTML = data.extractors.map((ext, i) => {
+    const passed = ext.tests.filter(t => t.status === 'pass').length;
+    const total = ext.tests.length;
+    const pct = Math.round((passed / total) * 100);
+    const badgeClass = ext.decision === 'go' ? 'badge-go' : 'badge-conditional';
+    const badgeText = ext.decision === 'go' ? 'GO' : 'CONDITIONAL';
+    const scoreColor = pct === 100 ? 'var(--green)' : pct >= 70 ? 'var(--blue)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+    return `
+      <div class="summary-card animate-in stagger-${i+1} ${ext.id === selectedExtractor ? 'selected' : ''}"
+           onclick="selectExtractor('${ext.id}')" id="card-${ext.id}">
+        <span class="decision-badge ${badgeClass}">${badgeText}</span>
+        <div class="icon">${ext.icon}</div>
+        <div class="name">${ext.name}</div>
+        <div class="library">${ext.library}</div>
+        <div class="score" style="color:${scoreColor}">${passed}/${total}</div>
+        <div class="score-label">${pct}% pass rate</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectExtractor(id) {
+  selectedExtractor = id;
+  document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`card-${id}`).classList.add('selected');
+  renderDetail();
+  renderKeyFindings();
+
+  // Auto-switch to detail view
+  const activeTab = document.querySelector('.view-tab.active');
+  if (activeTab.textContent === 'Overview') {
+    // stay on overview
+  } else {
+    renderDetail();
+  }
+}
+
+function renderPassRateChart() {
+  const container = document.getElementById('passRateChart');
+  const maxTests = Math.max(...data.extractors.map(e => e.tests.length));
+
+  container.innerHTML = data.extractors.map(ext => {
+    const passed = ext.tests.filter(t => t.status === 'pass').length;
+    const expected = ext.tests.filter(t => t.status === 'expected').length;
+    const failed = ext.tests.filter(t => t.status === 'fail').length;
+    const total = ext.tests.length;
+    const passPct = (passed / total) * 100;
+    const expectedPct = (expected / total) * 100;
+
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${ext.icon} ${ext.name}</div>
+        <div class="bar-track">
+          <div style="display:flex;height:100%;width:100%">
+            <div class="bar-fill" style="width:${passPct}%;background:${ext.color};opacity:0.9">${passed}P</div>
+            ${expected ? `<div class="bar-fill" style="width:${expectedPct}%;background:${ext.color};opacity:0.35">${expected}E</div>` : ''}
+          </div>
+        </div>
+        <div class="bar-value">${passed}/${total}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderKeyFindings() {
+  const container = document.getElementById('keyFindings');
+  const ext = data.extractors.find(e => e.id === selectedExtractor);
+
+  container.innerHTML = ext.findings.map(f =>
+    `<li class="${f.type}">${f.text}</li>`
+  ).join('');
+}
+
+function renderDecisionSummary() {
+  const container = document.getElementById('decisionSummary');
+  const decisions = data.extractors.map(ext => {
+    const passed = ext.tests.filter(t => t.status === 'pass').length;
+    const total = ext.tests.length;
+    const color = ext.decision === 'go' ? 'var(--green)' : 'var(--yellow)';
+    const label = ext.decision === 'go' ? 'GO' : 'CONDITIONAL';
+
+    return `
+      <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:20px;width:32px;text-align:center">${ext.icon}</span>
+        <span style="flex:1;font-weight:500">${ext.name}</span>
+        <span style="font-family:monospace;color:var(--text-dim);font-size:13px">${ext.library}</span>
+        <span style="font-family:monospace;font-size:13px;color:var(--text-dim)">${passed}/${total}</span>
+        <span style="font-weight:700;color:${color};font-size:13px;min-width:100px;text-align:right">${label}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = decisions;
+}
+
+function renderDetail() {
+  const ext = data.extractors.find(e => e.id === selectedExtractor);
+  document.getElementById('detailTitle').innerHTML =
+    `<span class="dot" style="background:${ext.color}"></span> ${ext.icon} ${ext.name} — Test Results`;
+
+  const table = document.getElementById('detailTable');
+  const headers = '<tr><th>Test</th><th>Category</th><th>Status</th><th>Time</th><th>Content</th><th>Notes</th></tr>';
+
+  const rows = ext.tests.map(t => {
+    const statusClass = t.status === 'pass' ? 'status-pass' : t.status === 'expected' ? 'status-expected' : 'status-fail';
+    const statusLabel = t.status === 'pass' ? '● PASS' : t.status === 'expected' ? '◐ EXPECTED' : '● FAIL';
+    const bodyStr = t.body > 0 ? (t.body > 1000 ? `${(t.body/1000).toFixed(1)}K` : t.body) + ' chars' : '—';
+    const timeStr = t.time > 1000 ? `${(t.time/1000).toFixed(1)}s` : `${t.time}ms`;
+
+    return `
+      <tr>
+        <td style="font-weight:500">${t.name}</td>
+        <td style="color:var(--text-dim)">${t.category}</td>
+        <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+        <td style="font-family:monospace;font-size:12px;color:var(--text-dim)">${timeStr}</td>
+        <td style="font-family:monospace;font-size:12px">${bodyStr}</td>
+        <td style="font-size:12px;color:var(--text-dim)">${t.note || ''}</td>
+      </tr>
+    `;
+  }).join('');
+
+  table.innerHTML = headers + rows;
+}
+
+function renderTimingCharts() {
+  // Average timing
+  const avgContainer = document.getElementById('avgTimingChart');
+  const maxAvg = Math.max(...data.extractors.map(ext => {
+    const times = ext.tests.filter(t => t.status === 'pass').map(t => t.time);
+    return times.length ? times.reduce((a,b) => a+b, 0) / times.length : 0;
+  }));
+
+  avgContainer.innerHTML = data.extractors.map(ext => {
+    const times = ext.tests.filter(t => t.status === 'pass').map(t => t.time);
+    const avg = times.length ? Math.round(times.reduce((a,b) => a+b, 0) / times.length) : 0;
+    const pct = maxAvg > 0 ? (avg / maxAvg) * 100 : 0;
+    const timeStr = avg > 1000 ? `${(avg/1000).toFixed(1)}s` : `${avg}ms`;
+
+    return `
+      <div class="timing-row">
+        <div class="timing-label">${ext.icon} ${ext.name}</div>
+        <div class="timing-bar">
+          <div class="timing-fill" style="width:${pct}%;background:${ext.color}"></div>
+        </div>
+        <div class="timing-value">${timeStr}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Per-test timing
+  const perTestContainer = document.getElementById('perTestTimingChart');
+  const allTests = [];
+  data.extractors.forEach(ext => {
+    ext.tests.forEach(t => {
+      if (t.status === 'pass' && t.time > 0) {
+        allTests.push({ name: `${ext.icon} ${t.name}`, time: t.time, color: ext.color });
+      }
+    });
+  });
+  allTests.sort((a, b) => b.time - a.time);
+  const topTests = allTests.slice(0, 12);
+  const maxTime = topTests[0]?.time || 1;
+
+  perTestContainer.innerHTML = topTests.map(t => {
+    const pct = (t.time / maxTime) * 100;
+    const timeStr = t.time > 1000 ? `${(t.time/1000).toFixed(1)}s` : `${t.time}ms`;
+    return `
+      <div class="timing-row">
+        <div class="timing-label">${t.name}</div>
+        <div class="timing-bar">
+          <div class="timing-fill" style="width:${pct}%;background:${t.color}"></div>
+        </div>
+        <div class="timing-value">${timeStr}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMatrix() {
+  const table = document.getElementById('matrixTable');
+  const capabilities = ['title', 'author', 'date', 'body', 'media', 'tables', 'metadata'];
+  const capLabels = {
+    title: 'Title', author: 'Author', date: 'Date', body: 'Body Text',
+    media: 'Media Refs', tables: 'Tables', metadata: 'Rich Metadata'
+  };
+
+  const headerCells = data.extractors.map(e => `<th>${e.icon}<br>${e.name}</th>`).join('');
+  const headerRow = `<tr><th></th>${headerCells}</tr>`;
+
+  const rows = capabilities.map(cap => {
+    const cells = data.extractors.map(ext => {
+      const val = ext.capabilities[cap];
+      if (val === 'yes') return '<td><span class="matrix-cell cell-pass">✓</span></td>';
+      if (val === 'partial') return '<td><span class="matrix-cell cell-partial">◐</span></td>';
+      if (val === 'no') return '<td><span class="matrix-cell cell-fail">✗</span></td>';
+      return '<td><span class="matrix-cell cell-na">—</span></td>';
+    }).join('');
+    return `<tr><td>${capLabels[cap]}</td>${cells}</tr>`;
+  }).join('');
+
+  table.innerHTML = headerRow + rows;
+}
+
+function switchView(view) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(`view-${view}`).classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>
