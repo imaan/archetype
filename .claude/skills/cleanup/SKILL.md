@@ -122,7 +122,13 @@ Update `scratchpad/work-queue.md`:
 - List all outstanding GitHub issues
 - Ensure queue matches reality after any work done this session
 
-### 10. Final Verification
+### 10. CLAUDE.md Audit
+Run `/claude-md-improver` to check CLAUDE.md quality and currency against the current codebase state.
+
+### 11. Dev Skills Audit
+Run `/dev-init:improve` to check if the generated dev skills are still in sync with CLAUDE.md. Run this after the CLAUDE.md audit so skills are checked against the latest version.
+
+### 12. Final Verification
 ```bash
 git status
 git log --oneline -5
