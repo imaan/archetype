@@ -1,0 +1,39 @@
+Content-Type: multipart/mixed; boundary="===============0563353113364762077=="
+MIME-Version: 1.0
+Subject: Q1 Report Attached
+From: Finance Team <finance@example.com>
+To: management@example.com
+Date: Mon, 16 Mar 2026 23:52:21 +0000
+Message-ID: <177370514132.41481.12173739252130141878@example.com>
+
+--===============0563353113364762077==
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+
+SGkgdGVhbSwKClBsZWFzZSBmaW5kIHRoZSBRMSBmaW5hbmNpYWwgcmVwb3J0IGF0dGFjaGVkLgoK
+S2V5IGhpZ2hsaWdodHM6Ci0gUmV2ZW51ZSB1cCAxMiUgWW9ZCi0gT3BlcmF0aW5nIGNvc3RzIHJl
+ZHVjZWQgYnkgNSUKLSBOZXcgY3VzdG9tZXIgYWNxdWlzaXRpb24gZXhjZWVkZWQgdGFyZ2V0cwoK
+TGV0J3MgZGlzY3VzcyBhdCB0aGUgbmV4dCBib2FyZCBtZWV0aW5nLgoKUmVnYXJkcywKRmluYW5j
+ZSBUZWFt
+
+--===============0563353113364762077==
+Content-Type: application/octet-stream; Name="q1-report.txt"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="q1-report.txt"
+
+UTEgMjAyNiBGaW5hbmNpYWwgU3VtbWFyeQo9PT09PT09PT09PT09PT09PT09PT09PT0KClJldmVu
+dWU6ICQyLDQ1MCwwMDAKRXhwZW5zZXM6ICQxLDg5MCwwMDAKTmV0IEluY29tZTogJDU2MCwwMDAK
+R3Jvd3RoOiAxMiUgWW9ZCg==
+
+--===============0563353113364762077==
+Content-Type: application/octet-stream; Name="q1-detailed.pdf"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="q1-detailed.pdf"
+
+JVBERi0xLjQgZmFrZSBwZGYgY29udGVudCBmb3IgdGVzdGluZyBhdHRhY2htZW50IGRldGVjdGlv
+bg==
+
+--===============0563353113364762077==--
